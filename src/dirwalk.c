@@ -1,7 +1,7 @@
 #include "dirwalk.h"
 
 void dirInfo(const char* dir, int l_flag, int f_flag, int d_flag, char** files, int* count) {
-    //Эекземпляры структур для работы с директорией и файлами
+    //Экземпляры структур для работы с директорией и файлами
     DIR* d;
     struct dirent* entry;
     struct stat file_stat;
@@ -13,7 +13,7 @@ void dirInfo(const char* dir, int l_flag, int f_flag, int d_flag, char** files, 
         return;
     }
 
-    while ((entry = readdir(d)) != NULL) { //Чтение файл за файлом
+    while ((entry = readdir(d)) != NULL) { //Чтение файла за файлом
         //Пропуск текущей и родительской директорий
         if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
             continue;
@@ -56,7 +56,7 @@ void dirInfo(const char* dir, int l_flag, int f_flag, int d_flag, char** files, 
             dirInfo(path, l_flag, f_flag, d_flag, files, count);
         }
     }
-    closedir(d);
+    closedir(d); //Закрытие директории
 }
 
 int comparator(const void* a, const void* b) { //Компаратор для сравнения строк в массиве файлов
