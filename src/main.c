@@ -4,7 +4,7 @@ int main(int argc, char* argv[]) {
     int l_flag = 0, f_flag = 0, d_flag = 0, s_flag = 0; //Флаги для сортировки
     char* dr = "."; //Просмотр текущей директории по умолчанию
     int firstDir = (argc > 1 && argv[1][0] != '-'); //Проверка первого символа второго аргумента из командной строки
-    char* files[1024]; //Массив для файлов
+    char** files = NULL; //Массив для файлов
     int count = 0; //Счетчик элементов в массиве файлов
 
     int opt;
@@ -33,16 +33,22 @@ int main(int argc, char* argv[]) {
         dr[strlen(dr) - 1] = '\0';
     }
 
-    dirInfo(dr, l_flag, f_flag, d_flag, files, &count); //Вызов функции
+    if (s_flag) {
+        count = counter(dr);
+        files = malloc(count * sizeof(char*));
+    }
+
+    count = 0;
+    dirInfo(dr, l_flag, f_flag, d_flag, s_flag, files, &count); //Вызов функции
 
     if (s_flag) { //Если флаг '-s' установлен
         setlocale(LC_COLLATE, ""); //Установка локали для сортировки
         qsort(files, count, sizeof(char*), comparator); //Сортировка массива файлов
-    }
-
-    for (int i = 0; i < count; i++) { //Вывод массива файлов на консоль
-        printf("%s\n", files[i]);
-        free(files[i]); //Очистка памяти
+        for (int i = 0; i < count; i++) { //Вывод массива файлов на консоль
+            printf("%s\n", files[i]);
+            free(files[i]); //Очистка памяти
+        }
+        free(files);
     }
 
     return 0;

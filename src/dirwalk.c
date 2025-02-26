@@ -1,11 +1,11 @@
 #include "dirwalk.h"
 
-void dirInfo(const char* dir, int l_flag, int f_flag, int d_flag, char** files, int* count) {
+void dirInfo(const char* dir, int l_flag, int f_flag, int d_flag, int s_flag, char** files, int* count) {
     //Экземпляры структур для работы с директорией и файлами
     DIR* d;
     struct dirent* entry;
     struct stat file_stat;
-    char path[1024]; //Массив для записи пути файла
+    char* path; //Массив для записи пути файла
 
     d = opendir(dir); //Окрытие директории
     if (d == NULL) {
@@ -19,7 +19,15 @@ void dirInfo(const char* dir, int l_flag, int f_flag, int d_flag, char** files, 
             continue;
         }
 
-        snprintf(path, sizeof(path), "%s/%s", dir, entry->d_name); //Запись пути файла
+        size_t length = strlen(dir) + strlen(entry->d_name) + 3;
+        path = malloc(length);
+        if (!path) {
+            perror("malloc failed");
+            closedir(d);
+            abort();
+        }
+
+        snprintf(path, length, "%s/%s", dir, entry->d_name); //Запись пути файла
         if (lstat(path, &file_stat) == -1) { //Получение информации о файле
             perror("lstat");
             continue;
@@ -28,35 +36,75 @@ void dirInfo(const char* dir, int l_flag, int f_flag, int d_flag, char** files, 
         if ((l_flag && S_ISLNK(file_stat.st_mode))      //Проверка установленных флагов
             || (f_flag && S_ISREG(file_stat.st_mode)) 
             || (d_flag && S_ISDIR(file_stat.st_mode))) {
-
-            char* temp = malloc((strlen(path) + 2)); //Выделение памяти под путь до файла
-            if (!temp) {
-                perror("malloc failed");
-                closedir(d);
-                abort();
-            }
             
             //Запись пути до файла с идентификацией для симлинка, директории и файла
             if (S_ISLNK(file_stat.st_mode)) {
-                strcpy(temp, path);
-                strcat(temp, "@");
+                strcat(path, "@");
             }
-            else if (S_ISREG(file_stat.st_mode)) {
-                strcpy(temp, path);
-            }
-            else {
-                strcpy(temp, path);
-                strcat(temp, "/");
+            else if (S_ISDIR(file_stat.st_mode)) {
+                strcat(path, "/");
             }
 
-            files[(*count)++] = temp; //Запись пути в массив файлов
+            if (!s_flag) {
+                printf("%s\n", path);
+            }
+            else {
+                files[(*count)++] = path; 
+            }
+        }
+
+        if (path[strlen(path) - 1] == '/') { //Обрезка лишнего '/' в пути
+            path[strlen(path) - 1] = '\0';
         }
 
         if (S_ISDIR(file_stat.st_mode)) { //Если файл - директория, запускается рекурсия
-            dirInfo(path, l_flag, f_flag, d_flag, files, count);
+            dirInfo(path, l_flag, f_flag, d_flag, s_flag, files, count);
         }
     }
     closedir(d); //Закрытие директории
+}
+
+int counter(const char* dir) {
+    DIR* d;
+    struct dirent* entry;
+    struct stat file_stat;
+    char* path;
+    int size = 0;
+
+    d = opendir(dir);
+    if (d == NULL) {
+        perror("opendir");
+        exit(EXIT_FAILURE);
+    }
+
+    while ((entry = readdir(d)) != NULL) {
+        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
+            continue;
+        }
+
+        size_t length = strlen(dir) + strlen(entry->d_name) + 2;
+        path = malloc(length);
+        if (!path) {
+            perror("malloc failed");
+            closedir(d);
+            abort();
+        }
+
+        snprintf(path, length, "%s/%s", dir, entry->d_name); //Запись пути файла
+        if (lstat(path, &file_stat) == -1) { //Получение информации о файле
+            perror("lstat");
+            continue;
+        }
+
+        if (S_ISDIR(file_stat.st_mode)) { //Если файл - директория, запускается рекурсия
+            size += counter(path);
+        }
+
+        size++;
+        free(path);
+    }
+    closedir(d);
+    return size;
 }
 
 int comparator(const void* a, const void* b) { //Компаратор для сравнения строк в массиве файлов

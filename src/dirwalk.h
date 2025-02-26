@@ -14,7 +14,9 @@
 #include <getopt.h>
 
 //Объявление прототипов функций
-void dirInfo(const char* dir, int l_flag, int f_flag, int d_flag, char** files, int* count);
+void dirInfo(const char* dir, int l_flag, int f_flag, int d_flag, int s_flag, char** files, int* count);
+
+int counter(const char* dir);
 
 int comparator(const void* a, const void* b);
 
