@@ -10,7 +10,7 @@ void dirInfo(const char* dir, int l_flag, int f_flag, int d_flag, int s_flag, ch
     d = opendir(dir); //Окрытие директории
     if (d == NULL) {
         perror("opendir");
-        return;
+        exit(EXIT_FAILURE);
     }
 
     while ((entry = readdir(d)) != NULL) { //Чтение файла за файлом
@@ -19,6 +19,7 @@ void dirInfo(const char* dir, int l_flag, int f_flag, int d_flag, int s_flag, ch
             continue;
         }
 
+        //Выделение памяти под путь файла с запасом
         size_t length = strlen(dir) + strlen(entry->d_name) + 3;
         path = malloc(length);
         if (!path) {
@@ -37,7 +38,7 @@ void dirInfo(const char* dir, int l_flag, int f_flag, int d_flag, int s_flag, ch
             || (f_flag && S_ISREG(file_stat.st_mode)) 
             || (d_flag && S_ISDIR(file_stat.st_mode))) {
             
-            //Запись пути до файла с идентификацией для симлинка, директории и файла
+            //Запись пути до файла с идентификацией для симлинка и директории
             if (S_ISLNK(file_stat.st_mode)) {
                 strcat(path, "@");
             }
@@ -46,10 +47,10 @@ void dirInfo(const char* dir, int l_flag, int f_flag, int d_flag, int s_flag, ch
             }
 
             if (!s_flag) {
-                printf("%s\n", path);
+                printf("%s\n", path); //Вывод на экран, если сортировка не нужна
             }
             else {
-                files[(*count)++] = path; 
+                files[(*count)++] = path;
             }
         }
 
@@ -60,11 +61,15 @@ void dirInfo(const char* dir, int l_flag, int f_flag, int d_flag, int s_flag, ch
         if (S_ISDIR(file_stat.st_mode)) { //Если файл - директория, запускается рекурсия
             dirInfo(path, l_flag, f_flag, d_flag, s_flag, files, count);
         }
+
+        if (!s_flag) { //Очистка памяти, если сортировка не нужна
+            free(path);
+        }
     }
     closedir(d); //Закрытие директории
 }
 
-int counter(const char* dir) {
+int counter(const char* dir) { //Данная функция аналогично dirwalk, одна высчитывает только кол-во строк путей к файлам
     DIR* d;
     struct dirent* entry;
     struct stat file_stat;
@@ -90,13 +95,13 @@ int counter(const char* dir) {
             abort();
         }
 
-        snprintf(path, length, "%s/%s", dir, entry->d_name); //Запись пути файла
-        if (lstat(path, &file_stat) == -1) { //Получение информации о файле
+        snprintf(path, length, "%s/%s", dir, entry->d_name);
+        if (lstat(path, &file_stat) == -1) {
             perror("lstat");
             continue;
         }
 
-        if (S_ISDIR(file_stat.st_mode)) { //Если файл - директория, запускается рекурсия
+        if (S_ISDIR(file_stat.st_mode)) {
             size += counter(path);
         }
 

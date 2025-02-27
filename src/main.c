@@ -34,8 +34,8 @@ int main(int argc, char* argv[]) {
     }
 
     if (s_flag) {
-        count = counter(dr);
-        files = malloc(count * sizeof(char*));
+        count = counter(dr); //Подсчет кол-ва строк
+        files = malloc(count * sizeof(char*)); //Выделение памяти под массив
     }
 
     count = 0;
