@@ -1,14 +1,12 @@
 #include "dirwalk.h"
 
 int main(int argc, char* argv[]) {
-    int l_flag = 0, f_flag = 0, d_flag = 0, s_flag = 0; //Флаги для сортировки
-    char* dr = "."; //Просмотр текущей директории по умолчанию
+    int l_flag = 0, f_flag = 0, d_flag = 0, s_flag = 0; //Флаги для сканирования
+    char* dr = "."; //Сканирование текущей директории по умолчанию
     int firstDir = (argc > 1 && argv[1][0] != '-'); //Проверка первого символа второго аргумента из командной строки
-    char** files = NULL; //Массив для файлов
-    int count = 0; //Счетчик элементов в массиве файлов
 
     int opt;
-    while ((opt = getopt(argc - firstDir, argv + firstDir, "lfds")) != -1) { //Чтение флагов
+    while ((opt = getopt(argc - firstDir, argv + firstDir, "lfds")) != -1) { //Установка флагов
         switch (opt) {
             case 'l': l_flag = 1; break;
             case 'f': f_flag = 1; break;
@@ -29,19 +27,16 @@ int main(int argc, char* argv[]) {
         dr = argv[optind]; //Установить путь к директории
     }
 
-    if (dr[strlen(dr) - 1] == '/') { //Обрезка лишнего '/' в пути
+    if (dr[strlen(dr) - 1] == '/') { //Удаление лишнего '/' в пути
         dr[strlen(dr) - 1] = '\0';
     }
 
     if (s_flag) {
-        count = counter(dr); //Подсчет кол-ва строк
+        char** files; //Массив для файлов
+        int count = counter(dr); //Подсчет кол-ва строк
         files = malloc(count * sizeof(char*)); //Выделение памяти под массив
-    }
-
-    count = 0;
-    dirInfo(dr, l_flag, f_flag, d_flag, s_flag, files, &count); //Вызов функции
-
-    if (s_flag) { //Если флаг '-s' установлен
+        count = 0;
+        dirwalk(dr, l_flag, f_flag, d_flag, s_flag, files, &count); //Вызов функции
         setlocale(LC_COLLATE, ""); //Установка локали для сортировки
         qsort(files, count, sizeof(char*), comparator); //Сортировка массива файлов
         for (int i = 0; i < count; i++) { //Вывод массива файлов на консоль
@@ -50,6 +45,9 @@ int main(int argc, char* argv[]) {
         }
         free(files);
     }
-
+    else {
+        dirwalk(dr, l_flag, f_flag, d_flag, s_flag, NULL, NULL); //Вызов функции
+    }
+    
     return 0;
 }

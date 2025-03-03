@@ -12,9 +12,10 @@
 #include <string.h>
 #include <locale.h>
 #include <getopt.h>
+#include <errno.h>
 
 //Объявление прототипов функций
-void dirInfo(const char* dir, int l_flag, int f_flag, int d_flag, int s_flag, char** files, int* count);
+void dirwalk(const char* dir, int l_flag, int f_flag, int d_flag, int s_flag, char** files, int* count);
 
 int counter(const char* dir);
 

@@ -1,6 +1,6 @@
 #include "dirwalk.h"
 
-void dirInfo(const char* dir, int l_flag, int f_flag, int d_flag, int s_flag, char** files, int* count) {
+void dirwalk(const char* dir, int l_flag, int f_flag, int d_flag, int s_flag, char** files, int* count) {
     //Экземпляры структур для работы с директорией и файлами
     DIR* d;
     struct dirent* entry;
@@ -9,8 +9,8 @@ void dirInfo(const char* dir, int l_flag, int f_flag, int d_flag, int s_flag, ch
 
     d = opendir(dir); //Окрытие директории
     if (d == NULL) {
-        perror("opendir");
-        exit(EXIT_FAILURE);
+        fprintf(stderr, "dirwalk: '%s': %s\n", dir, strerror(errno));
+        return;
     }
 
     while ((entry = readdir(d)) != NULL) { //Чтение файла за файлом
@@ -54,22 +54,24 @@ void dirInfo(const char* dir, int l_flag, int f_flag, int d_flag, int s_flag, ch
             }
         }
 
-        if (path[strlen(path) - 1] == '/') { //Обрезка лишнего '/' в пути
+        if (path[strlen(path) - 1] == '/') { //Удаление лишнего '/' в пути
             path[strlen(path) - 1] = '\0';
         }
 
         if (S_ISDIR(file_stat.st_mode)) { //Если файл - директория, запускается рекурсия
-            dirInfo(path, l_flag, f_flag, d_flag, s_flag, files, count);
+            dirwalk(path, l_flag, f_flag, d_flag, s_flag, files, count);
         }
 
-        if (!s_flag) { //Очистка памяти, если сортировка не нужна
+        if (!s_flag || !((l_flag && S_ISLNK(file_stat.st_mode))
+            || (f_flag && S_ISREG(file_stat.st_mode)) 
+            || (d_flag && S_ISDIR(file_stat.st_mode)))) { //Очистка памяти, если сортировка не нужна
             free(path);
         }
     }
     closedir(d); //Закрытие директории
 }
 
-int counter(const char* dir) { //Данная функция аналогично dirwalk, одна высчитывает только кол-во строк путей к файлам
+int counter(const char* dir) { //Данная функция аналогично dirwalk, однако высчитывает только кол-во строк путей к файлам
     DIR* d;
     struct dirent* entry;
     struct stat file_stat;
@@ -78,8 +80,7 @@ int counter(const char* dir) { //Данная функция аналогичн�
 
     d = opendir(dir);
     if (d == NULL) {
-        perror("opendir");
-        exit(EXIT_FAILURE);
+        return 0;
     }
 
     while ((entry = readdir(d)) != NULL) {
@@ -97,7 +98,6 @@ int counter(const char* dir) { //Данная функция аналогичн�
 
         snprintf(path, length, "%s/%s", dir, entry->d_name);
         if (lstat(path, &file_stat) == -1) {
-            perror("lstat");
             continue;
         }
 
